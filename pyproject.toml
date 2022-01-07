@@ -1,0 +1,11 @@
+[tool.pyright]
+include = ["pyamaze"]
+exclude = ["**/.direnv", "**/__pycache__"]
+stubPath = "src/stubs"
+
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+executionEnvironments = [
+  { root = "src" }
+]
