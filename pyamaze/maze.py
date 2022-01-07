@@ -534,11 +534,11 @@ class Maze:
                     if mov - o == -3:
                         a._RCW()
                     if mov == o:
-                        a.x, a.y = p[a.position]
+                        a.position = p[a.position]
                 else:
                     del p[a.position]
             else:
-                a.x, a.y = p[a.position]
+                a.position = p[a.position]
         # If path is provided as String
         if type(p) == str:
             if len(p) == 0:
@@ -585,18 +585,16 @@ class Maze:
                 move = p[0]
                 if move == "E":
                     if a.y + 1 <= self.cols:
-                        a.y += 1
+                        a.position = (a.x, a.y + 1)
                 elif move == "W":
                     if a.y - 1 > 0:
-                        a.y -= 1
+                        a.position = (a.x, a.y - 1)
                 elif move == "N":
                     if a.x - 1 > 0:
-                        a.x -= 1
-                        a.y = a.y
+                        a.position = (a.x - 1, a.y)
                 elif move == "S":
                     if a.x + 1 <= self.rows:
-                        a.x += 1
-                        a.y = a.y
+                        a.position = (a.x + 1, a.y)
                 elif move == "C":
                     a._RCW()
                 elif move == "A":
@@ -648,12 +646,12 @@ class Maze:
                     elif mov - o == -3:
                         a._RCW()
                     elif mov == o:
-                        a.x, a.y = p[0]
+                        a.position = p[0]
                         del p[0]
                 else:
                     del p[0]
             else:
-                a.x, a.y = p[0]
+                a.position = p[0]
                 del p[0]
 
         self.win.after(delay, self._tracePathSingle, a, p, kill, showMarked, delay)

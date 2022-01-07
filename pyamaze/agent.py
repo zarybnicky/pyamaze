@@ -50,24 +50,31 @@ class Agent:
         self._orient = 0
         self._head = None
         self._body = []
-        if x is None:
-            x = parent_maze.rows
-        if y is None:
-            y = parent_maze.cols
-        self.x = x
-        self.y = y
         self.footprints = footprints
         self.goal = goal if goal else self.parent_maze._goal
         self.parent_maze.agents.append(self)
-        self.position = (self.x, self.y)
+        self._position = (x if x else parent_maze.rows, y if y else parent_maze.cols)
+        self.draw_agent()
+        self.draw_agent()
+
+    @property
+    def x(self):
+        return self.position[0]
 
     @property
     def y(self):
-        return self._y
+        return self.position[1]
 
-    @y.setter
-    def y(self, newY):
-        self._y = newY
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, newpos):
+        self._position = newpos
+        self.draw_agent()
+
+    def draw_agent(self):
         w = self.parent_maze.cell_width
         x = self.x * w - w + self.parent_maze.label_width
         y = self.y * w - w + self.parent_maze.label_width
@@ -155,15 +162,6 @@ class Agent:
             pass
         self.parent_maze.redraw_cell(self.position)
 
-    @property
-    def position(self):
-        return (self.x, self.y)
-
-    @position.setter
-    def position(self, newpos):
-        self.x = newpos[0]
-        self.y = newpos[1]
-
     def _RCCW(self):
         """
         To Rotate the agent in Counter Clock Wise direction
@@ -210,21 +208,19 @@ class Agent:
 
     def move_right(self, event):
         if self.parent_maze.maze_map[self.position]["E"]:
-            self.y = self.y + 1
+            self.position = (self.x, self.y + 1)
 
     def move_left(self, event):
         if self.parent_maze.maze_map[self.position]["W"]:
-            self.y = self.y - 1
+            self.position = (self.x, self.y - 1)
 
     def move_up(self, event):
         if self.parent_maze.maze_map[self.position]["N"]:
-            self.x = self.x - 1
-            self.y = self.y
+            self.position = (self.x - 1, self.y)
 
     def move_down(self, event):
         if self.parent_maze.maze_map[self.position]["S"]:
-            self.x = self.x + 1
-            self.y = self.y
+            self.position = (self.x + 1, self.y)
 
     def kill(self):
         for item in self._body:
