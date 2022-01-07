@@ -26,23 +26,25 @@ class Maze:
         grid--> A list of all cells
         path--> Shortest path from start(bottom right) to goal(by default top left)
                 It will be a dictionary
-        _win,_cell_width,_canvas -->    _win and )canvas are for Tkinter window and canvas
-                                        _cell_width is cell width calculated automatically
-        _agents-->  A list of aganets on the maze
+        win,cell_width,canvas -->    win and )canvas are for Tkinter window and canvas
+                                        cell_width is cell width calculated automatically
+        agents-->  A list of aganets on the maze
         markedCells-->  Will be used to mark some particular cell during
                         path trace by the agent.
         _
         """
+        self.win: Tk
+        self.canvas: Canvas
+
         self.rows = rows
         self.cols = cols
         self.maze_map = {}
-        self.grid = []
+        self._grid = []
         self.path = {}
-        self._cell_width = 50
-        self._win = None
-        self._canvas = None
-        self._agents = []
-        self.markCells = []
+        self.cell_width = 50
+        self.agents = []
+        self.mark_cells = []
+        self.trace_path_list = []
 
     @property
     def grid(self):
@@ -56,7 +58,7 @@ class Maze:
             x = 1
             y = 1 + y
             for m in range(self.rows):
-                self.grid.append((x, y))
+                self._grid.append((x, y))
                 self.maze_map[x, y] = {"E": 0, "W": 0, "N": 0, "S": 0}
                 x = x + 1
 
@@ -197,25 +199,25 @@ class Maze:
             while len(frontier) > 0:
                 cell = frontier.popleft()
                 if self.maze_map[cell]["W"] and (cell[0], cell[1] - 1) not in visited:
-                    nextCell = (cell[0], cell[1] - 1)
-                    path[nextCell] = cell
-                    frontier.append(nextCell)
-                    visited.add(nextCell)
+                    next_cell = (cell[0], cell[1] - 1)
+                    path[next_cell] = cell
+                    frontier.append(next_cell)
+                    visited.add(next_cell)
                 if self.maze_map[cell]["S"] and (cell[0] + 1, cell[1]) not in visited:
-                    nextCell = (cell[0] + 1, cell[1])
-                    path[nextCell] = cell
-                    frontier.append(nextCell)
-                    visited.add(nextCell)
+                    next_cell = (cell[0] + 1, cell[1])
+                    path[next_cell] = cell
+                    frontier.append(next_cell)
+                    visited.add(next_cell)
                 if self.maze_map[cell]["E"] and (cell[0], cell[1] + 1) not in visited:
-                    nextCell = (cell[0], cell[1] + 1)
-                    path[nextCell] = cell
-                    frontier.append(nextCell)
-                    visited.add(nextCell)
+                    next_cell = (cell[0], cell[1] + 1)
+                    path[next_cell] = cell
+                    frontier.append(next_cell)
+                    visited.add(next_cell)
                 if self.maze_map[cell]["N"] and (cell[0] - 1, cell[1]) not in visited:
-                    nextCell = (cell[0] - 1, cell[1])
-                    path[nextCell] = cell
-                    frontier.append(nextCell)
-                    visited.add(nextCell)
+                    next_cell = (cell[0] - 1, cell[1])
+                    path[next_cell] = cell
+                    frontier.append(next_cell)
+                    visited.add(next_cell)
             fwdPath = {}
             cell = self._goal
             while cell != (self.rows, self.cols):
@@ -238,7 +240,7 @@ class Maze:
                 biasLength = max(self.rows // 10, 2)
             bias = 0
 
-            while len(_stack) > 0:
+            while _stack:
                 cell = []
                 bias += 1
                 if (x, y + 1) not in _closed and (x, y + 1) in self.grid:
@@ -250,21 +252,13 @@ class Maze:
                 if (x - 1, y) not in _closed and (x - 1, y) in self.grid:
                     cell.append("N")
                 if len(cell) > 0:
-                    if (
-                        pattern is not None
-                        and pattern.lower() == "h"
-                        and bias <= biasLength
-                    ):
+                    if pattern is not None and pattern.lower() == "h" and bias <= biasLength:
                         if "E" in cell or "W" in cell:
                             if "S" in cell:
                                 cell.remove("S")
                             if "N" in cell:
                                 cell.remove("N")
-                    elif (
-                        pattern is not None
-                        and pattern.lower() == "v"
-                        and bias <= biasLength
-                    ):
+                    elif pattern is not None and pattern.lower() == "v" and bias <= biasLength:
                         if "N" in cell or "S" in cell:
                             if "E" in cell:
                                 cell.remove("E")
@@ -272,7 +266,9 @@ class Maze:
                                 cell.remove("W")
                     else:
                         bias = 0
+
                     current_cell = random.choice(cell)
+
                     if current_cell == "E":
                         self._Open_East(x, y)
                         self.path[x, y + 1] = x, y
@@ -315,18 +311,15 @@ class Maze:
                 notPathCells = [i for i in self.grid if i not in pathCells]
                 random.shuffle(pathCells)
                 random.shuffle(notPathCells)
-                pathLength = len(pathCells)
-                notPathLength = len(notPathCells)
-                count1, count2 = (
-                    pathLength / 3 * loopPercent / 100,
-                    notPathLength / 3 * loopPercent / 100,
-                )
+
+                count1 = len(pathCells) / 3 * loopPercent / 100
+                count2 = len(notPathCells) / 3 * loopPercent / 100,
 
                 # remove blocks from shortest path cells
                 count = 0
                 i = 0
                 while count < count1:  # these many blocks to remove
-                    if len(blockedNeighbours(pathCells[i])) > 0:
+                    if blockedNeighbours(pathCells[i]):
                         cell = random.choice(blockedNeighbours(pathCells[i]))
                         if not isCyclic(cell, pathCells[i]):
                             removeWallinBetween(cell, pathCells[i])
@@ -338,7 +331,7 @@ class Maze:
                     if i == len(pathCells):
                         break
                 # remove blocks from outside shortest path cells
-                if len(notPathCells) > 0:
+                if notPathCells:
                     count = 0
                     i = 0
                     while count < count2:  # these many blocks to remove
@@ -401,16 +394,15 @@ class Maze:
         """
 
         self._LabWidth = 26  # Space from the top for Labels
-        self._win = Tk()
-        self._win.title("PYTHON MAZE WORLD by Learning Orbis")
+        self.win = Tk()
+        self.win.title("PYTHON MAZE WORLD by Learning Orbis")
 
-        scr_width = self._win.winfo_screenwidth()
-        scr_height = self._win.winfo_screenheight()
-        self._win.geometry(f"{scr_width}x{scr_height}+0+0")
-        self._canvas = Canvas(
-            width=scr_width, height=scr_height, bg=theme.value[0]
-        )  # 0,0 is top left corner
-        self._canvas.pack(expand=YES, fill=BOTH)
+        scr_width = self.win.winfo_screenwidth()
+        scr_height = self.win.winfo_screenheight()
+        self.win.geometry(f"{scr_width}x{scr_height}+0+0")
+        self.canvas = Canvas(width=scr_width, height=scr_height, bg=theme.value[0])
+        # 0,0 is top left corner
+        self.canvas.pack(expand=YES, fill=BOTH)
         # Some calculations for calculating the width of the maze cell
         k = 3.25
         if self.rows >= 95 and self.cols >= 95:
@@ -425,51 +417,32 @@ class Maze:
             k = 2.5
         elif self.rows >= 22 and self.cols >= 22:
             k = 3
-        self._cell_width = round(
+        self.cell_width = round(
             min(
-                ((scr_height - self.rows - k * self._LabWidth) / (self.rows)),
-                ((scr_width - self.cols - k * self._LabWidth) / (self.cols)),
+                ((scr_height - self.rows - k * self._LabWidth) / self.rows),
+                ((scr_width - self.cols - k * self._LabWidth) / self.cols),
                 90,
             ),
             3,
         )
 
         # Creating Maze lines
-        if self._win is not None:
-            if self.grid is not None:
-                for cell in self.grid:
-                    x, y = cell
-                    w = self._cell_width
-                    x = x * w - w + self._LabWidth
-                    y = y * w - w + self._LabWidth
-                    if self.maze_map[cell]["E"] == False:
-                        l = self._canvas.create_line(
-                            y + w,
-                            x,
-                            y + w,
-                            x + w,
-                            width=2,
-                            fill=theme.value[1],
-                            tag="line",
-                        )
-                    if self.maze_map[cell]["W"] == False:
-                        l = self._canvas.create_line(
-                            y, x, y, x + w, width=2, fill=theme.value[1], tag="line"
-                        )
-                    if self.maze_map[cell]["N"] == False:
-                        l = self._canvas.create_line(
-                            y, x, y + w, x, width=2, fill=theme.value[1], tag="line"
-                        )
-                    if self.maze_map[cell]["S"] == False:
-                        l = self._canvas.create_line(
-                            y,
-                            x + w,
-                            y + w,
-                            x + w,
-                            width=2,
-                            fill=theme.value[1],
-                            tag="line",
-                        )
+        if self.win is None or self.grid is None:
+            return
+
+        for cell in self.grid:
+            x, y = cell
+            w = self.cell_width
+            x = x * w - w + self._LabWidth
+            y = y * w - w + self._LabWidth
+            if not self.maze_map[cell]["E"]:
+                self.canvas.create_line(y + w, x, y + w, x + w, width=2, fill=theme.value[1], tag="line")
+            if not self.maze_map[cell]["W"]:
+                self.canvas.create_line(y, x, y, x + w, width=2, fill=theme.value[1], tag="line")
+            if not self.maze_map[cell]["N"]:
+                self.canvas.create_line(y, x, y + w, x, width=2, fill=theme.value[1], tag="line")
+            if not self.maze_map[cell]["S"]:
+                self.canvas.create_line(y, x + w, y + w, x + w, width=2, fill=theme.value[1], tag="line")
 
     def _redrawCell(self, x, y, theme):
         """
@@ -477,42 +450,36 @@ class Maze:
         With Full sized square agent, it can overlap with maze lines
         So the cell is redrawn so that cell lines are on top
         """
-        w = self._cell_width
+        w = self.cell_width
         cell = (x, y)
         x = x * w - w + self._LabWidth
         y = y * w - w + self._LabWidth
-        if self.maze_map[cell]["E"] == False:
-            self._canvas.create_line(
-                y + w, x, y + w, x + w, width=2, fill=theme.value[1]
-            )
-        if self.maze_map[cell]["W"] == False:
-            self._canvas.create_line(y, x, y, x + w, width=2, fill=theme.value[1])
-        if self.maze_map[cell]["N"] == False:
-            self._canvas.create_line(y, x, y + w, x, width=2, fill=theme.value[1])
-        if self.maze_map[cell]["S"] == False:
-            self._canvas.create_line(
-                y, x + w, y + w, x + w, width=2, fill=theme.value[1]
-            )
+        if not self.maze_map[cell]["E"]:
+            self.canvas.create_line(y + w, x, y + w, x + w, width=2, fill=theme.value[1])
+        if not self.maze_map[cell]["W"]:
+            self.canvas.create_line(y, x, y, x + w, width=2, fill=theme.value[1])
+        if not self.maze_map[cell]["N"]:
+            self.canvas.create_line(y, x, y + w, x, width=2, fill=theme.value[1])
+        if not self.maze_map[cell]["S"]:
+            self.canvas.create_line(y, x + w, y + w, x + w, width=2, fill=theme.value[1])
 
     def enableArrowKey(self, a):
         """
         To control an agent a with Arrow Keys
         """
-        self._win.bind("<Left>", a.moveLeft)
-        self._win.bind("<Right>", a.moveRight)
-        self._win.bind("<Up>", a.moveUp)
-        self._win.bind("<Down>", a.moveDown)
+        self.win.bind("<Left>", a.moveLeft)
+        self.win.bind("<Right>", a.moveRight)
+        self.win.bind("<Up>", a.moveUp)
+        self.win.bind("<Down>", a.moveDown)
 
     def enableWASD(self, a):
         """
         To control an agent a with keys W,A,S,D
         """
-        self._win.bind("<a>", a.moveLeft)
-        self._win.bind("<d>", a.moveRight)
-        self._win.bind("<w>", a.moveUp)
-        self._win.bind("<s>", a.moveDown)
-
-    _tracePathList = []
+        self.win.bind("<a>", a.moveLeft)
+        self.win.bind("<d>", a.moveRight)
+        self.win.bind("<w>", a.moveUp)
+        self.win.bind("<s>", a.moveDown)
 
     def _tracePathSingle(self, a, p, kill, showMarked, delay):
         """
@@ -524,15 +491,15 @@ class Maze:
             if the agent should be killed after it reaches the Goal or completes the path
             """
             for i in range(len(a._body)):
-                self._canvas.delete(a._body[i])
-            self._canvas.delete(a._head)
+                self.canvas.delete(a._body[i])
+            self.canvas.delete(a._head)
 
-        w = self._cell_width
-        if (a.x, a.y) in self.markCells and showMarked:
-            w = self._cell_width
+        w = self.cell_width
+        if (a.x, a.y) in self.mark_cells and showMarked:
+            w = self.cell_width
             x = a.x * w - w + self._LabWidth
             y = a.y * w - w + self._LabWidth
-            self._canvas.create_oval(
+            self.canvas.create_oval(
                 y + w / 2.5 + w / 20,
                 x + w / 2.5 + w / 20,
                 y + w / 2.5 + w / 4 - w / 20,
@@ -541,25 +508,25 @@ class Maze:
                 outline="red",
                 tag="ov",
             )
-            self._canvas.tag_raise("ov")
+            self.canvas.tag_raise("ov")
 
         if (a.x, a.y) == (a.goal):
-            del maze._tracePathList[0][0][a]
-            if maze._tracePathList[0][0] == {}:
-                del maze._tracePathList[0]
-                if len(maze._tracePathList) > 0:
+            del self.trace_path_list[0][0][a]
+            if self.trace_path_list[0][0] == {}:
+                del self.trace_path_list[0]
+                if len(self.trace_path_list) > 0:
                     self.tracePath(
-                        maze._tracePathList[0][0],
-                        kill=maze._tracePathList[0][1],
-                        delay=maze._tracePathList[0][2],
+                        self.trace_path_list[0][0],
+                        kill=self.trace_path_list[0][1],
+                        delay=self.trace_path_list[0][2],
                     )
             if kill:
-                self._win.after(300, killAgent, a)
+                self.win.after(300, killAgent, a)
             return
         # If path is provided as Dictionary
         if type(p) == dict:
             if len(p) == 0:
-                del maze._tracePathList[0][0][a]
+                del self.trace_path_list[0][0][a]
                 return
             if a.shape == "arrow":
                 old = (a.x, a.y)
@@ -600,18 +567,18 @@ class Maze:
         # If path is provided as String
         if type(p) == str:
             if len(p) == 0:
-                del maze._tracePathList[0][0][a]
-                if maze._tracePathList[0][0] == {}:
-                    del maze._tracePathList[0]
-                    if len(maze._tracePathList) > 0:
+                del self.trace_path_list[0][0][a]
+                if self.trace_path_list[0][0] == {}:
+                    del self.trace_path_list[0]
+                    if len(self.trace_path_list) > 0:
                         self.tracePath(
-                            maze._tracePathList[0][0],
-                            kill=maze._tracePathList[0][1],
-                            delay=maze._tracePathList[0][2],
+                            self.trace_path_list[0][0],
+                            kill=self.trace_path_list[0][1],
+                            delay=self.trace_path_list[0][2],
                         )
                 if kill:
 
-                    self._win.after(300, killAgent, a)
+                    self.win.after(300, killAgent, a)
                 return
             if a.shape == "arrow":
                 old = (a.x, a.y)
@@ -663,17 +630,17 @@ class Maze:
         # If path is provided as List
         if type(p) == list:
             if len(p) == 0:
-                del maze._tracePathList[0][0][a]
-                if maze._tracePathList[0][0] == {}:
-                    del maze._tracePathList[0]
-                    if len(maze._tracePathList) > 0:
+                del self.trace_path_list[0][0][a]
+                if self.trace_path_list[0][0] == {}:
+                    del self.trace_path_list[0]
+                    if len(self.trace_path_list) > 0:
                         self.tracePath(
-                            maze._tracePathList[0][0],
-                            kill=maze._tracePathList[0][1],
-                            delay=maze._tracePathList[0][2],
+                            self.trace_path_list[0][0],
+                            kill=self.trace_path_list[0][1],
+                            delay=self.trace_path_list[0][2],
                         )
                 if kill:
-                    self._win.after(300, killAgent, a)
+                    self.win.after(300, killAgent, a)
                 return
             if a.shape == "arrow":
                 old = (a.x, a.y)
@@ -714,15 +681,15 @@ class Maze:
                 a.x, a.y = p[0]
                 del p[0]
 
-        self._win.after(delay, self._tracePathSingle, a, p, kill, showMarked, delay)
+        self.win.after(delay, self._tracePathSingle, a, p, kill, showMarked, delay)
 
     def tracePath(self, d, kill=False, delay=300, showMarked=False):
         """
         A method to trace path by agent
         You can provide more than one agent/path details
         """
-        self._tracePathList.append((d, kill, delay))
-        if maze._tracePathList[0][0] == d:
+        self.trace_path_list.append((d, kill, delay))
+        if self.trace_path_list[0][0] == d:
             for a, p in d.items():
                 if a.goal != (a.x, a.y) and len(p) != 0:
                     self._tracePathSingle(a, p, kill, showMarked, delay)
@@ -731,4 +698,4 @@ class Maze:
         """
         Finally to run the Tkinter Main Loop
         """
-        self._win.mainloop()
+        self.win.mainloop()

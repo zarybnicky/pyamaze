@@ -1,7 +1,6 @@
-from aStarDemo import aStar
-from aStarDemo2 import aStar2
-from pyamaze import maze, agent, COLOR, TextLabel
-from timeit import timeit
+from pyamaze import Maze
+from .aStarDemo import aStar
+from .aStarDemo2 import aStar2
 
 # myMaze=maze(30,40)
 # myMaze.CreateMaze(loopPercent=100)
@@ -31,7 +30,7 @@ f1, f2, f3 = 0, 0, 0
 s1, s2, s3 = 0, 0, 0
 
 for _ in range(100):
-    myMaze = maze(20, 30)
+    myMaze = Maze(20, 30)
     myMaze.CreateMaze(loopPercent=100)
     searchPath, aPath, fwdPath = aStar(myMaze)
     searchPath2, aPath2, fwdPath2 = aStar2(myMaze)

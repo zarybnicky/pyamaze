@@ -16,7 +16,7 @@ def DFS(m, start=None):
             break
         poss = 0
         for d in "ESNW":
-            if m.maze_map[currCell][d] == True:
+            if m.maze_map[currCell][d]:
                 if d == "E":
                     child = (currCell[0], currCell[1] + 1)
                 if d == "W":
@@ -32,7 +32,7 @@ def DFS(m, start=None):
                 frontier.append(child)
                 dfsPath[child] = currCell
         if poss > 1:
-            m.markCells.append(currCell)
+            m.mark_cells.append(currCell)
     fwdPath = {}
     cell = m._goal
     while cell != start:
@@ -41,13 +41,12 @@ def DFS(m, start=None):
     return dSeacrh, dfsPath, fwdPath
 
 
-if __name__ == "__main__":
+def main():
     m = Maze(10, 10)  # Change to any size
     m.CreateMaze(2, 4)  # (2,4) is Goal Cell, Change that to any other valid cell
 
-    dSeacrh, dfsPath, fwdPath = DFS(
-        m, (5, 1)
-    )  # (5,1) is Start Cell, Change that to any other valid cell
+    # (5,1) is Start Cell, Change that to any other valid cell
+    dSeacrh, dfsPath, fwdPath = DFS(m, (5, 1))
 
     a = Agent(m, 5, 1, goal=(2, 4), footprints=True, shape="square", color=COLOR.green)
     b = Agent(m, 2, 4, goal=(5, 1), footprints=True, filled=True)
@@ -71,3 +70,6 @@ if __name__ == "__main__":
     # m.tracePath({b:dfsPath})
     # m.tracePath({c:fwdPath})
     # m.run()
+
+if __name__ == "__main__":
+    main()

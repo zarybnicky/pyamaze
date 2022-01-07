@@ -6,6 +6,8 @@ stubPath = "src/stubs"
 reportMissingImports = true
 reportMissingTypeStubs = false
 
+python.analysis.useLibraryCodeForTypes = true
+
 executionEnvironments = [
   { root = "src" }
 ]

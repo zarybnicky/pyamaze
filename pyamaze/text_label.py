@@ -6,7 +6,7 @@ class TextLabel:
     This class is to create Text Label to show different results on the window.
     """
 
-    def __init__(self, parentMaze, title, value):
+    def __init__(self, parent_maze, title, value):
         """
         parentmaze-->   The maze on which Label will be displayed.
         title-->        The title of the value to be displayed
@@ -14,8 +14,8 @@ class TextLabel:
         """
         self.title = title
         self._value = value
-        self._parentMaze = parentMaze
-        # self._parentMaze._labels.append(self)
+        self.parent_maze = parent_maze
+        # self.parent_maze._labels.append(self)
         self._var = None
         self.drawLabel()
 
@@ -31,7 +31,7 @@ class TextLabel:
     def drawLabel(self):
         self._var = StringVar()
         self.lab = Label(
-            self._parentMaze._canvas,
+            self.parent_maze.canvas,
             textvariable=self._var,
             bg="white",
             fg="black",

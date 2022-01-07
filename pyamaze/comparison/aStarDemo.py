@@ -1,4 +1,4 @@
-from pyamaze import maze, agent, COLOR, TextLabel
+from pyamaze import Maze, Agent, COLOR, TextLabel
 from queue import PriorityQueue
 
 
@@ -53,15 +53,13 @@ def aStar(m, start=None):
 
 
 if __name__ == "__main__":
-    m = maze(4, 4)
+    m = Maze(4, 4)
     m.CreateMaze(loadMaze="aStardemo.csv")
 
     searchPath, aPath, fwdPath = aStar(m)
-    a = agent(m, footprints=True, color=COLOR.blue, filled=True)
-    b = agent(
-        m, 1, 1, footprints=True, color=COLOR.yellow, filled=True, goal=(m.rows, m.cols)
-    )
-    c = agent(m, footprints=True, color=COLOR.red)
+    a = Agent(m, footprints=True, color=COLOR.blue, filled=True)
+    b = Agent(m, 1, 1, footprints=True, color=COLOR.yellow, filled=True, goal=(m.rows, m.cols))
+    c = Agent(m, footprints=True, color=COLOR.red)
 
     m.tracePath({a: searchPath}, delay=300)
     m.tracePath({b: aPath}, delay=300)
