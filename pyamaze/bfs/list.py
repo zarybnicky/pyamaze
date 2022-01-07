@@ -6,12 +6,12 @@ def BFS(m):
     frontier = [start]
     explored = [start]
     bfsPath = {}
-    while len(frontier) > 0:
+    while frontier:
         currCell = frontier.pop(0)
         if currCell == (1, 1):
             break
         for d in "ESNW":
-            if m.maze_map[currCell][d] == True:
+            if m.maze_map[currCell][d]:
                 if d == "E":
                     childCell = (currCell[0], currCell[1] + 1)
                 elif d == "W":

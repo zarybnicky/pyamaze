@@ -57,20 +57,9 @@ class Agent:
         self.x = x
         self.y = y
         self.footprints = footprints
+        self.goal = goal if goal else self.parent_maze._goal
         self.parent_maze.agents.append(self)
-        if goal == None:
-            self.goal = self.parent_maze._goal
-        else:
-            self.goal = goal
         self.position = (self.x, self.y)
-
-    @property
-    def x(self):
-        return self._x
-
-    @x.setter
-    def x(self, newX):
-        self._x = newX
 
     @property
     def y(self):
@@ -80,29 +69,28 @@ class Agent:
     def y(self, newY):
         self._y = newY
         w = self.parent_maze.cell_width
-        x = self.x * w - w + self.parent_maze._LabWidth
-        y = self.y * w - w + self.parent_maze._LabWidth
+        x = self.x * w - w + self.parent_maze.label_width
+        y = self.y * w - w + self.parent_maze.label_width
+        fill = self.color.value[1]
         if self.shape == "square":
             if self.filled:
-                self._coord = (y, x, y + w, x + w)
+                self.coordinates = (y, x, y + w, x + w)
             else:
-                self._coord = (
+                self.coordinates = (
                     y + w / 2.5,
                     x + w / 2.5,
                     y + w / 2.5 + w / 4,
                     x + w / 2.5 + w / 4,
                 )
         else:
-            self._coord = (y + w / 2, x + 3 * w / 9, y + w / 2, x + 3 * w / 9 + w / 4)
+            self.coordinates = (y + w / 2, x + 3 * w / 9, y + w / 2, x + 3 * w / 9 + w / 4)
 
         if self._head is not None:
             if self.footprints is False:
                 self.parent_maze.canvas.delete(self._head)
             else:
                 if self.shape == "square":
-                    self.parent_maze.canvas.itemconfig(
-                        self._head, fill=self.color.value[1], outline=""
-                    )
+                    self.parent_maze.canvas.itemconfig(self._head, fill=fill, outline="")
                     self.parent_maze.canvas.tag_raise(self._head)
                     try:
                         self.parent_maze.canvas.tag_lower(self._head, "ov")
@@ -114,11 +102,9 @@ class Agent:
                             round(((lll[1] - 26) / self.parent_maze.cell_width) + 1),
                             round(((lll[0] - 26) / self.parent_maze.cell_width) + 1),
                         )
-                        self.parent_maze._redrawCell(*oldcell, self.parent_maze.theme)
+                        self.parent_maze.redraw_cell(oldcell)
                 else:
-                    self.parent_maze.canvas.itemconfig(
-                        self._head, fill=self.color.value[1]
-                    )  # ,outline='gray70')
+                    self.parent_maze.canvas.itemconfig(self._head, fill=fill)
                     self.parent_maze.canvas.tag_raise(self._head)
                     try:
                         self.parent_maze.canvas.tag_lower(self._head, "ov")
@@ -127,22 +113,9 @@ class Agent:
                 self._body.append(self._head)
             if not self.filled or self.shape == "arrow":
                 if self.shape == "square":
-                    self._head = self.parent_maze.canvas.create_rectangle(*self._coord, fill=self.color.value[0], outline="")
-                    try:
-                        self.parent_maze.canvas.tag_lower(self._head, "ov")
-                    except:
-                        pass
+                    self.draw_square_head()
                 else:
-                    self._head = self.parent_maze.canvas.create_line(
-                        *self._coord,
-                        fill=self.color.value[0],
-                        arrow=FIRST,
-                        arrowshape=(3 / 10 * w, 4 / 10 * w, 4 / 10 * w),
-                    )  # ,outline=self.color.name)
-                    try:
-                        self.parent_maze.canvas.tag_lower(self._head, "ov")
-                    except:
-                        pass
+                    self.draw_arrow_head()
                     o = self._orient % 4
                     if o == 1:
                         self._RCW()
@@ -155,19 +128,32 @@ class Agent:
                         self._RCCW()
                         self._orient += 2
             else:
-                self._head = self.parent_maze.canvas.create_rectangle(*self._coord, fill=self.color.value[0], outline="")
-                try:
-                    self.parent_maze.canvas.tag_lower(self._head, "ov")
-                except:
-                    pass
-                self.parent_maze._redrawCell(self.x, self.y, theme=self.parent_maze.theme)
+                self.draw_square_head()
         else:
-            self._head = self.parent_maze.canvas.create_rectangle(*self._coord, fill=self.color.value[0], outline="")
-            try:
-                self.parent_maze.canvas.tag_lower(self._head, "ov")
-            except:
-                pass
-            self.parent_maze._redrawCell(self.x, self.y, theme=self.parent_maze.theme)
+            self.draw_square_head()
+
+    def draw_arrow_head(self):
+        w = self.parent_maze.cell_width
+        fill = self.color.value[1]
+        self._head = self.parent_maze.canvas.create_line(
+            *self.coordinates,
+            fill=fill,
+            arrow=FIRST,
+            arrowshape=(3 / 10 * w, 4 / 10 * w, 4 / 10 * w),
+        )
+        try:
+            self.parent_maze.canvas.tag_lower(self._head, "ov")
+        except:
+            pass
+
+    def draw_square_head(self):
+        fill = self.color.value[1]
+        self._head = self.parent_maze.canvas.create_rectangle(*self.coordinates, fill=fill, outline="")
+        try:
+            self.parent_maze.canvas.tag_lower(self._head, "ov")
+        except:
+            pass
+        self.parent_maze.redraw_cell(self.position)
 
     @property
     def position(self):
@@ -177,7 +163,6 @@ class Agent:
     def position(self, newpos):
         self.x = newpos[0]
         self.y = newpos[1]
-        self._position = newpos
 
     def _RCCW(self):
         """
@@ -188,17 +173,17 @@ class Agent:
             return (p[0] - newOrigin[0], p[1] - newOrigin[1])
 
         w = self.parent_maze.cell_width
-        x = self.x * w - w + self.parent_maze._LabWidth
-        y = self.y * w - w + self.parent_maze._LabWidth
+        x = self.x * w - w + self.parent_maze.label_width
+        y = self.y * w - w + self.parent_maze.label_width
         cent = (y + w / 2, x + w / 2)
-        p1 = pointNew((self._coord[0], self._coord[1]), cent)
-        p2 = pointNew((self._coord[2], self._coord[3]), cent)
+        p1 = pointNew((self.coordinates[0], self.coordinates[1]), cent)
+        p2 = pointNew((self.coordinates[2], self.coordinates[3]), cent)
         p1CW = (p1[1], -p1[0])
         p2CW = (p2[1], -p2[0])
         p1 = p1CW[0] + cent[0], p1CW[1] + cent[1]
         p2 = p2CW[0] + cent[0], p2CW[1] + cent[1]
-        self._coord = (*p1, *p2)
-        self.parent_maze.canvas.coords(self._head, *self._coord)
+        self.coordinates = (*p1, *p2)
+        self.parent_maze.canvas.coords(self._head, *self.coordinates)
         self._orient = (self._orient - 1) % 4
 
     def _RCW(self):
@@ -210,33 +195,38 @@ class Agent:
             return (p[0] - newOrigin[0], p[1] - newOrigin[1])
 
         w = self.parent_maze.cell_width
-        x = self.x * w - w + self.parent_maze._LabWidth
-        y = self.y * w - w + self.parent_maze._LabWidth
+        x = self.x * w - w + self.parent_maze.label_width
+        y = self.y * w - w + self.parent_maze.label_width
         cent = (y + w / 2, x + w / 2)
-        p1 = pointNew((self._coord[0], self._coord[1]), cent)
-        p2 = pointNew((self._coord[2], self._coord[3]), cent)
+        p1 = pointNew((self.coordinates[0], self.coordinates[1]), cent)
+        p2 = pointNew((self.coordinates[2], self.coordinates[3]), cent)
         p1CW = (-p1[1], p1[0])
         p2CW = (-p2[1], p2[0])
         p1 = p1CW[0] + cent[0], p1CW[1] + cent[1]
         p2 = p2CW[0] + cent[0], p2CW[1] + cent[1]
-        self._coord = (*p1, *p2)
-        self.parent_maze.canvas.coords(self._head, *self._coord)
+        self.coordinates = (*p1, *p2)
+        self.parent_maze.canvas.coords(self._head, *self.coordinates)
         self._orient = (self._orient + 1) % 4
 
-    def moveRight(self, event):
-        if self.parent_maze.maze_map[self.x, self.y]["E"] == True:
+    def move_right(self, event):
+        if self.parent_maze.maze_map[self.position]["E"]:
             self.y = self.y + 1
 
-    def moveLeft(self, event):
-        if self.parent_maze.maze_map[self.x, self.y]["W"] == True:
+    def move_left(self, event):
+        if self.parent_maze.maze_map[self.position]["W"]:
             self.y = self.y - 1
 
-    def moveUp(self, event):
-        if self.parent_maze.maze_map[self.x, self.y]["N"] == True:
+    def move_up(self, event):
+        if self.parent_maze.maze_map[self.position]["N"]:
             self.x = self.x - 1
             self.y = self.y
 
-    def moveDown(self, event):
-        if self.parent_maze.maze_map[self.x, self.y]["S"] == True:
+    def move_down(self, event):
+        if self.parent_maze.maze_map[self.position]["S"]:
             self.x = self.x + 1
             self.y = self.y
+
+    def kill(self):
+        for item in self._body:
+            self.parent_maze.canvas.delete(item)
+        self.parent_maze.canvas.delete(self._head)
