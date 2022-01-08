@@ -9,7 +9,7 @@ from timeit import timeit
 # First Run this for BFS:
 # m=maze(20,30)
 # m.CreateMaze(loadMaze='mazeComparison1.csv')
-# bSearch,bfsPath,fwdPath=BFS(m)
+# bSearch,fwdPath=BFS(m)
 
 
 # l=TextLabel(m,'BFS Path Length',len(fwdPath)+1)
@@ -17,10 +17,8 @@ from timeit import timeit
 
 
 # a=agent(m,footprints=True,color=COLOR.blue,filled=True)
-# b=agent(m,1,1,footprints=True,color=COLOR.yellow,filled=True,goal=(m.rows,m.cols))
 # c=agent(m,footprints=True,color=COLOR.red)
 # m.tracePath({a:bSearch},delay=50)
-# m.tracePath({b:bfsPath},delay=100)
 # m.tracePath({c:fwdPath},delay=100)
 
 # m.run()
@@ -29,17 +27,14 @@ from timeit import timeit
 # Then run this for A-Star
 # m=maze(20,30)
 # m.CreateMaze(loadMaze='mazeComparison1.csv')
-# aSearch,aPath,fwdPath=aStar(m)
+# aSearch,fwdPath=aStar(m)
 
 # l=TextLabel(m,'A-Star Path Length',len(fwdPath)+1)
 # l=TextLabel(m,'A-Star Search Length',len(aSearch)+1)
 
 # a=agent(m,footprints=True,color=COLOR.blue,filled=True)
-# b=agent(m,1,1,footprints=True,color=COLOR.yellow,filled=True,goal=(m.rows,m.cols))
 # c=agent(m,footprints=True,color=COLOR.red)
 # m.tracePath({a:aSearch},delay=50)
-# m.tracePath({b:aPath},delay=100)
-
 # m.tracePath({c:fwdPath},delay=100)
 
 
@@ -52,8 +47,8 @@ from timeit import timeit
 myMaze = Maze(50, 70)
 myMaze.CreateMaze(loopPercent=100)
 # myMaze.CreateMaze()
-searchPath, aPath, fwdPath = aStar(myMaze)
-bSearch, bfsPath, fwdBFSPath = BFS(myMaze)
+searchPath, fwdPath = aStar(myMaze)
+bSearch, fwdBFSPath = BFS(myMaze)
 
 l = TextLabel(myMaze, "A-Star Path Length", len(fwdPath) + 1)
 l = TextLabel(myMaze, "BFS Path Length", len(fwdBFSPath) + 1)

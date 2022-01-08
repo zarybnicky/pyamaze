@@ -1,7 +1,7 @@
 from pyamaze import Maze, COLOR, Agent, TextLabel
 
 m = Maze()
-m.CreateMaze(loopPercent=50)
+m.CreateMaze(loopPercent=0)
 
 # a=agent(m,5,4)
 # print(a.x)

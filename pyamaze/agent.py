@@ -1,5 +1,5 @@
-from .color import COLOR
 from tkinter import FIRST
+from .color import COLOR
 
 
 class Agent:

@@ -1,45 +1,53 @@
 from pyamaze import Maze, Agent, COLOR, TextLabel
 
 
-def BFS(m):
-    start = (m.rows, m.cols)
+def BFS(maze, start=None):
+    if start is None:
+        start = (maze.rows, maze.cols)
     frontier = [start]
     explored = [start]
-    bfsPath = {}
+    bfs_path = {}
+    agent_path = []
+
     while frontier:
-        currCell = frontier.pop(0)
-        if currCell == (1, 1):
+        current_cell = frontier.pop(0)
+        agent_path.append(current_cell)
+        if current_cell == maze._goal:
             break
         for d in "ESNW":
-            if m.maze_map[currCell][d]:
-                if d == "E":
-                    childCell = (currCell[0], currCell[1] + 1)
-                elif d == "W":
-                    childCell = (currCell[0], currCell[1] - 1)
-                elif d == "N":
-                    childCell = (currCell[0] - 1, currCell[1])
-                elif d == "S":
-                    childCell = (currCell[0] + 1, currCell[1])
-                if childCell in explored:
-                    continue
-                frontier.append(childCell)
-                explored.append(childCell)
-                bfsPath[childCell] = currCell
-    fwdPath = {}
-    cell = (1, 1)
+            if not m.maze_map[current_cell][d]:
+                continue
+            if d == "E":
+                next_cell = (current_cell[0], current_cell[1] + 1)
+            elif d == "W":
+                next_cell = (current_cell[0], current_cell[1] - 1)
+            elif d == "N":
+                next_cell = (current_cell[0] - 1, current_cell[1])
+            elif d == "S":
+                next_cell = (current_cell[0] + 1, current_cell[1])
+
+            if next_cell in explored:
+                continue
+            frontier.append(next_cell)
+            explored.append(next_cell)
+            bfs_path[next_cell] = current_cell
+
+    fwd_path = {}
+    cell = maze._goal
     while cell != start:
-        fwdPath[bfsPath[cell]] = cell
-        cell = bfsPath[cell]
-    return fwdPath
+        fwd_path[bfs_path[cell]] = cell
+        cell = bfs_path[cell]
+    return fwd_path
 
 
 if __name__ == "__main__":
     m = Maze(5, 7)
     m.CreateMaze(loopPercent=40)
-    path = BFS(m)
+    search_path, path = BFS(m)
 
     a = Agent(m, footprints=True, filled=True)
     m.tracePath({a: path})
+    m.tracePath({b: search_path})
     l = TextLabel(m, "Length of Shortest Path", len(path) + 1)
 
     m.run()

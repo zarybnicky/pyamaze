@@ -1,5 +1,4 @@
-# from pyMaze import maze,agent,COLOR,TextLabel
-from pyamaze import Maze, Agent, TextLabel, COLOR
+from pyamaze import Maze, Agent, COLOR
 
 
 def DFS(m, start=None):
@@ -7,38 +6,39 @@ def DFS(m, start=None):
         start = (m.rows, m.cols)
     explored = [start]
     frontier = [start]
-    dfsPath = {}
-    dSeacrh = []
-    while len(frontier) > 0:
-        currCell = frontier.pop()
-        dSeacrh.append(currCell)
-        if currCell == m._goal:
+    dfs_path = {}
+    while frontier:
+        current_cell = frontier.pop()
+        if current_cell == m._goal:
             break
         poss = 0
         for d in "ESNW":
-            if m.maze_map[currCell][d]:
-                if d == "E":
-                    child = (currCell[0], currCell[1] + 1)
-                if d == "W":
-                    child = (currCell[0], currCell[1] - 1)
-                if d == "N":
-                    child = (currCell[0] - 1, currCell[1])
-                if d == "S":
-                    child = (currCell[0] + 1, currCell[1])
-                if child in explored:
-                    continue
-                poss += 1
-                explored.append(child)
-                frontier.append(child)
-                dfsPath[child] = currCell
+            if not m.maze_map[current_cell][d]:
+                continue
+            if d == "E":
+                next_cell = (current_cell[0], current_cell[1] + 1)
+            elif d == "W":
+                next_cell = (current_cell[0], current_cell[1] - 1)
+            elif d == "N":
+                next_cell = (current_cell[0] - 1, current_cell[1])
+            elif d == "S":
+                next_cell = (current_cell[0] + 1, current_cell[1])
+
+            if next_cell in explored:
+                continue
+            poss += 1
+            explored.append(next_cell)
+            frontier.append(next_cell)
+            dfs_path[next_cell] = current_cell
         if poss > 1:
-            m.mark_cells.append(currCell)
-    fwdPath = {}
+            m.mark_cells.append(current_cell)
+
+    fwd_path = {}
     cell = m._goal
     while cell != start:
-        fwdPath[dfsPath[cell]] = cell
-        cell = dfsPath[cell]
-    return dSeacrh, dfsPath, fwdPath
+        fwd_path[dfs_path[cell]] = cell
+        cell = dfs_path[cell]
+    return dfs_path, fwd_path
 
 
 def main():
@@ -46,30 +46,14 @@ def main():
     m.CreateMaze(2, 4)  # (2,4) is Goal Cell, Change that to any other valid cell
 
     # (5,1) is Start Cell, Change that to any other valid cell
-    dSeacrh, dfsPath, fwdPath = DFS(m, (5, 1))
+    dfs_path, fwd_path = DFS(m, (5, 1))
 
     a = Agent(m, 5, 1, goal=(2, 4), footprints=True, shape="square", color=COLOR.green)
     b = Agent(m, 2, 4, goal=(5, 1), footprints=True, filled=True)
     c = Agent(m, 5, 1, footprints=True, color=COLOR.yellow)
-    m.tracePath({a: dSeacrh}, showMarked=True)
-    m.tracePath({b: dfsPath})
-    m.tracePath({c: fwdPath})
+    m.tracePath({b: dfs_path})
+    m.tracePath({c: fwd_path})
     m.run()
-
-    ## The code below will generate the maze shown in video
-
-    # m=maze()
-    # m.CreateMaze(loadMaze='dfs.csv')
-
-    # dSeacrh,dfsPath,fwdPath=DFS(m)
-
-    # a=agent(m,footprints=True,shape='square',color=COLOR.green)
-    # b=agent(m,1,1,goal=(5,5),footprints=True,filled=True,color=COLOR.cyan)
-    # c=agent(m,footprints=True,color=COLOR.yellow)
-    # m.tracePath({a:dSeacrh},showMarked=True)
-    # m.tracePath({b:dfsPath})
-    # m.tracePath({c:fwdPath})
-    # m.run()
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
-from pyamaze import Maze, Agent, COLOR, TextLabel
-from pyamaze.bfs.list import BFS
-from pyamaze.dfs.list import DFS
 from timeit import timeit
+from pyamaze import Maze, Agent, COLOR, TextLabel
+from ..bfs.list import BFS
+from ..dfs.list import DFS
 
 m = Maze(20, 30)
 # m.CreateMaze(loopPercent=100)

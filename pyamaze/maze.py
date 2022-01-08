@@ -1,12 +1,11 @@
 import random
 import datetime
 import csv
-import os
 from tkinter import Tk, Canvas, YES, BOTH
-from collections import deque
 
 from .color import COLOR
 from .agent import Agent
+from .bfs.deque import BFS
 
 
 class Maze:
@@ -36,6 +35,7 @@ class Maze:
         self.win: Tk
         self.canvas: Canvas
 
+        self.size = (rows, cols)
         self.rows = rows
         self.cols = cols
         self.maze_map = {}
@@ -92,8 +92,6 @@ class Maze:
         y=1,
         pattern=None,
         loopPercent=0,
-        saveMaze=False,
-        loadMaze=None,
         theme: COLOR = COLOR.dark,
     ):
         """
@@ -104,19 +102,12 @@ class Maze:
         loopPercent-->  0 means there will be just one path from start to goal (perfect maze)
                         Higher value means there will be multiple paths (loops)
                         Higher the value (max 100) more will be the loops
-        saveMaze--> To save the generated Maze as CSV file for future reference.
-        loadMaze--> Provide the CSV file to generate a desried maze
         theme--> Dark or Light
         """
         _stack = []
         _closed = []
         self.theme = theme
         self._goal = (x, y)
-        if isinstance(theme, str):
-            if theme in COLOR.__members__:
-                self.theme = COLOR[theme]
-            else:
-                raise ValueError(f"{theme} is not a valid theme COLOR!")
 
         def blockedNeighbours(cell):
             n = []
@@ -184,204 +175,124 @@ class Maze:
                         ans = True
             return ans
 
-        def BFS(cell):
-            """
-            Breadth First Search
-            To generate the shortest path.
-            This will be used only when there are multiple paths (loopPercent>0) or
-            Maze is loaded from a CSV file.
-            If a perfect maze is generated and without the load file, this method will
-            not be used since the Maze generation will calculate the path.
-            """
-            frontier = deque()
-            frontier.append(cell)
-            path = {}
-            visited = {(self.rows, self.cols)}
-            while len(frontier) > 0:
-                cell = frontier.popleft()
-                if self.maze_map[cell]["W"] and (cell[0], cell[1] - 1) not in visited:
-                    next_cell = (cell[0], cell[1] - 1)
-                    path[next_cell] = cell
-                    frontier.append(next_cell)
-                    visited.add(next_cell)
-                if self.maze_map[cell]["S"] and (cell[0] + 1, cell[1]) not in visited:
-                    next_cell = (cell[0] + 1, cell[1])
-                    path[next_cell] = cell
-                    frontier.append(next_cell)
-                    visited.add(next_cell)
-                if self.maze_map[cell]["E"] and (cell[0], cell[1] + 1) not in visited:
-                    next_cell = (cell[0], cell[1] + 1)
-                    path[next_cell] = cell
-                    frontier.append(next_cell)
-                    visited.add(next_cell)
-                if self.maze_map[cell]["N"] and (cell[0] - 1, cell[1]) not in visited:
-                    next_cell = (cell[0] - 1, cell[1])
-                    path[next_cell] = cell
-                    frontier.append(next_cell)
-                    visited.add(next_cell)
-            fwdPath = {}
-            cell = self._goal
-            while cell != (self.rows, self.cols):
-                try:
-                    fwdPath[path[cell]] = cell
-                    cell = path[cell]
-                except:
-                    print("Path to goal not found!")
-                    return
-            return fwdPath
+        _stack.append((x, y))
+        _closed.append((x, y))
+        biasLength = 2  # if pattern is 'v' or 'h'
+        if pattern is not None and pattern.lower() == "h":
+            biasLength = max(self.cols // 10, 2)
+        if pattern is not None and pattern.lower() == "v":
+            biasLength = max(self.rows // 10, 2)
+        bias = 0
 
-        # if maze is to be generated randomly
-        if not loadMaze:
-            _stack.append((x, y))
-            _closed.append((x, y))
-            biasLength = 2  # if pattern is 'v' or 'h'
-            if pattern is not None and pattern.lower() == "h":
-                biasLength = max(self.cols // 10, 2)
-            if pattern is not None and pattern.lower() == "v":
-                biasLength = max(self.rows // 10, 2)
-            bias = 0
+        while _stack:
+            cell = []
+            bias += 1
+            if (x, y + 1) not in _closed and (x, y + 1) in self.grid:
+                cell.append("E")
+            if (x, y - 1) not in _closed and (x, y - 1) in self.grid:
+                cell.append("W")
+            if (x + 1, y) not in _closed and (x + 1, y) in self.grid:
+                cell.append("S")
+            if (x - 1, y) not in _closed and (x - 1, y) in self.grid:
+                cell.append("N")
+            if len(cell) > 0:
+                if pattern is not None and pattern.lower() == "h" and bias <= biasLength:
+                    if "E" in cell or "W" in cell:
+                        if "S" in cell:
+                            cell.remove("S")
+                        if "N" in cell:
+                            cell.remove("N")
+                elif pattern is not None and pattern.lower() == "v" and bias <= biasLength:
+                    if "N" in cell or "S" in cell:
+                        if "E" in cell:
+                            cell.remove("E")
+                        if "W" in cell:
+                            cell.remove("W")
+                else:
+                    bias = 0
 
-            while _stack:
-                cell = []
-                bias += 1
-                if (x, y + 1) not in _closed and (x, y + 1) in self.grid:
-                    cell.append("E")
-                if (x, y - 1) not in _closed and (x, y - 1) in self.grid:
-                    cell.append("W")
-                if (x + 1, y) not in _closed and (x + 1, y) in self.grid:
-                    cell.append("S")
-                if (x - 1, y) not in _closed and (x - 1, y) in self.grid:
-                    cell.append("N")
-                if len(cell) > 0:
-                    if pattern is not None and pattern.lower() == "h" and bias <= biasLength:
-                        if "E" in cell or "W" in cell:
-                            if "S" in cell:
-                                cell.remove("S")
-                            if "N" in cell:
-                                cell.remove("N")
-                    elif pattern is not None and pattern.lower() == "v" and bias <= biasLength:
-                        if "N" in cell or "S" in cell:
-                            if "E" in cell:
-                                cell.remove("E")
-                            if "W" in cell:
-                                cell.remove("W")
-                    else:
-                        bias = 0
+                current_cell = random.choice(cell)
 
-                    current_cell = random.choice(cell)
+                if current_cell == "E":
+                    self._Open_East(x, y)
+                    self.path[x, y + 1] = x, y
+                    y = y + 1
+                    _closed.append((x, y))
+                    _stack.append((x, y))
 
-                    if current_cell == "E":
-                        self._Open_East(x, y)
-                        self.path[x, y + 1] = x, y
-                        y = y + 1
-                        _closed.append((x, y))
-                        _stack.append((x, y))
+                elif current_cell == "W":
+                    self._Open_West(x, y)
+                    self.path[x, y - 1] = x, y
+                    y = y - 1
+                    _closed.append((x, y))
+                    _stack.append((x, y))
 
-                    elif current_cell == "W":
-                        self._Open_West(x, y)
-                        self.path[x, y - 1] = x, y
-                        y = y - 1
-                        _closed.append((x, y))
-                        _stack.append((x, y))
+                elif current_cell == "N":
+                    self._Open_North(x, y)
+                    self.path[(x - 1, y)] = x, y
+                    x = x - 1
+                    _closed.append((x, y))
+                    _stack.append((x, y))
 
-                    elif current_cell == "N":
-                        self._Open_North(x, y)
-                        self.path[(x - 1, y)] = x, y
-                        x = x - 1
-                        _closed.append((x, y))
-                        _stack.append((x, y))
+                elif current_cell == "S":
+                    self._Open_South(x, y)
+                    self.path[(x + 1, y)] = x, y
+                    x = x + 1
+                    _closed.append((x, y))
+                    _stack.append((x, y))
 
-                    elif current_cell == "S":
-                        self._Open_South(x, y)
-                        self.path[(x + 1, y)] = x, y
-                        x = x + 1
-                        _closed.append((x, y))
-                        _stack.append((x, y))
+            else:
+                x, y = _stack.pop()
+
+        ## Multiple Path Loops
+        if loopPercent != 0:
+
+            x, y = self.rows, self.cols
+            pathCells = [(x, y)]
+            while x != self.rows or y != self.cols:
+                x, y = self.path[(x, y)]
+                pathCells.append((x, y))
+            notPathCells = [i for i in self.grid if i not in pathCells]
+            random.shuffle(pathCells)
+            random.shuffle(notPathCells)
+
+            count1 = len(pathCells) / 3 * loopPercent / 100
+            count2 = len(notPathCells) / 3 * loopPercent / 100
+
+            # remove blocks from shortest path cells
+            count = 0
+            i = 0
+            while count < count1:  # these many blocks to remove
+                if blockedNeighbours(pathCells[i]):
+                    cell = random.choice(blockedNeighbours(pathCells[i]))
+                    if not isCyclic(cell, pathCells[i]):
+                        removeWallinBetween(cell, pathCells[i])
+                        count += 1
+                    i += 1
 
                 else:
-                    x, y = _stack.pop()
-
-            ## Multiple Path Loops
-            if loopPercent != 0:
-
-                x, y = self.rows, self.cols
-                pathCells = [(x, y)]
-                while x != self.rows or y != self.cols:
-                    x, y = self.path[(x, y)]
-                    pathCells.append((x, y))
-                notPathCells = [i for i in self.grid if i not in pathCells]
-                random.shuffle(pathCells)
-                random.shuffle(notPathCells)
-
-                count1 = len(pathCells) / 3 * loopPercent / 100
-                count2 = len(notPathCells) / 3 * loopPercent / 100
-
-                # remove blocks from shortest path cells
+                    i += 1
+                if i == len(pathCells):
+                    break
+            # remove blocks from outside shortest path cells
+            if notPathCells:
                 count = 0
                 i = 0
-                while count < count1:  # these many blocks to remove
-                    if blockedNeighbours(pathCells[i]):
-                        cell = random.choice(blockedNeighbours(pathCells[i]))
-                        if not isCyclic(cell, pathCells[i]):
-                            removeWallinBetween(cell, pathCells[i])
+                while count < count2:  # these many blocks to remove
+                    if len(blockedNeighbours(notPathCells[i])) > 0:
+                        cell = random.choice(blockedNeighbours(notPathCells[i]))
+                        if not isCyclic(cell, notPathCells[i]):
+                            removeWallinBetween(cell, notPathCells[i])
                             count += 1
                         i += 1
 
                     else:
                         i += 1
-                    if i == len(pathCells):
+                    if i == len(notPathCells):
                         break
-                # remove blocks from outside shortest path cells
-                if notPathCells:
-                    count = 0
-                    i = 0
-                    while count < count2:  # these many blocks to remove
-                        if len(blockedNeighbours(notPathCells[i])) > 0:
-                            cell = random.choice(blockedNeighbours(notPathCells[i]))
-                            if not isCyclic(cell, notPathCells[i]):
-                                removeWallinBetween(cell, notPathCells[i])
-                                count += 1
-                            i += 1
-
-                        else:
-                            i += 1
-                        if i == len(notPathCells):
-                            break
-                self.path = BFS((self.rows, self.cols))
-        else:
-            # Load maze from CSV file
-            with open(loadMaze, "r") as f:
-                last = list(f.readlines())[-1]
-                c = last.split(",")
-                c[0] = int(c[0].lstrip('"('))
-                c[1] = int(c[1].rstrip(')"'))
-                self.rows = c[0]
-                self.cols = c[1]
-                self.grid = []
-
-            with open(loadMaze, "r") as f:
-                r = csv.reader(f)
-                next(r)
-                for i in r:
-                    c = i[0].split(",")
-                    c[0] = int(c[0].lstrip("("))
-                    c[1] = int(c[1].rstrip(")"))
-                    self.maze_map[tuple(c)] = {
-                        "E": int(i[1]),
-                        "W": int(i[2]),
-                        "N": int(i[3]),
-                        "S": int(i[4]),
-                    }
-            self.path = BFS((self.rows, self.cols))
+            _, self.path = BFS(self, self.size)
         self._drawMaze(self.theme)
         Agent(self, *self._goal, shape="square", filled=True, color=COLOR.green)
-        if saveMaze:
-            dt_string = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-            with open(f"maze--{dt_string}.csv", "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow(["  cell  ", "E", "W", "N", "S"])
-                for k, v in self.maze_map.items():
-                    writer.writerow([k] + v.values())
 
     def _drawMaze(self, theme):
         """
@@ -487,9 +398,9 @@ class Maze:
 
         if a.position == a.goal:
             del self.trace_path_list[0][0][a]
-            if self.trace_path_list[0][0] == {}:
+            if not self.trace_path_list[0][0]:
                 del self.trace_path_list[0]
-                if len(self.trace_path_list) > 0:
+                if self.trace_path_list:
                     self.tracePath(
                         self.trace_path_list[0][0],
                         kill=self.trace_path_list[0][1],
@@ -498,9 +409,10 @@ class Maze:
             if kill:
                 self.win.after(300, a.kill)
             return
+
         # If path is provided as Dictionary
         if type(p) == dict:
-            if len(p) == 0:
+            if not p:
                 del self.trace_path_list[0][0][a]
                 return
             if a.shape == "arrow":
@@ -539,22 +451,23 @@ class Maze:
                     del p[a.position]
             else:
                 a.position = p[a.position]
+
         # If path is provided as String
         if type(p) == str:
-            if len(p) == 0:
+            if not p:
                 del self.trace_path_list[0][0][a]
-                if self.trace_path_list[0][0] == {}:
+                if not self.trace_path_list[0][0]:
                     del self.trace_path_list[0]
-                    if len(self.trace_path_list) > 0:
+                    if self.trace_path_list:
                         self.tracePath(
                             self.trace_path_list[0][0],
                             kill=self.trace_path_list[0][1],
                             delay=self.trace_path_list[0][2],
                         )
                 if kill:
-
                     self.win.after(300, a.kill)
                 return
+
             if a.shape == "arrow":
                 old = a.position
                 new = p[0]
@@ -565,7 +478,7 @@ class Maze:
                     mov = 1
                 elif new == "S":
                     mov = 2
-                elif new == "W":
+                else:
                     mov = 3
 
                 if mov - o == 2:
@@ -600,13 +513,14 @@ class Maze:
                 elif move == "A":
                     a._RCCW()
                 p = p[1:]
+
         # If path is provided as List
         if type(p) == list:
             if not p:
                 del self.trace_path_list[0][0][a]
-                if self.trace_path_list[0][0] == {}:
+                if not self.trace_path_list[0][0]:
                     del self.trace_path_list[0]
-                    if len(self.trace_path_list) > 0:
+                    if self.trace_path_list:
                         self.tracePath(
                             self.trace_path_list[0][0],
                             kill=self.trace_path_list[0][1],
@@ -615,6 +529,7 @@ class Maze:
                 if kill:
                     self.win.after(300, a.kill)
                 return
+
             if a.shape == "arrow":
                 old = a.position
                 new = p[0]
@@ -672,3 +587,43 @@ class Maze:
         Finally to run the Tkinter Main Loop
         """
         self.win.mainloop()
+
+    @classmethod
+    def load(cls, filename, size):
+        maze = cls(*size)
+
+        with open(filename, "r") as f:
+            last = list(f.readlines())[-1]
+            c = last.split(",")
+            c[0] = int(c[0].lstrip('"('))
+            c[1] = int(c[1].rstrip(')"'))
+            maze.rows = c[0]
+            maze.cols = c[1]
+            maze.grid = []
+
+        with open(filename, "r") as f:
+            r = csv.reader(f)
+            next(r)
+            for i in r:
+                c = i[0].split(",")
+                c[0] = int(c[0].lstrip("("))
+                c[1] = int(c[1].rstrip(")"))
+                maze.maze_map[tuple(c)] = {
+                    "E": int(i[1]),
+                    "W": int(i[2]),
+                    "N": int(i[3]),
+                    "S": int(i[4]),
+                }
+
+        _, maze.path = BFS(size)
+
+
+    def save(self, filename=None):
+        if filename is None:
+            dt_string = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+            filename = f"maze--{dt_string}.csv"
+        with open(filename, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["  cell  ", "E", "W", "N", "S"])
+            for k, v in self.maze_map.items():
+                writer.writerow([k] + v.values())

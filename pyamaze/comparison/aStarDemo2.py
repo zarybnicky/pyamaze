@@ -54,8 +54,7 @@ def aStar2(m, start=None):
 
 
 if __name__ == "__main__":
-    m = Maze(4, 4)
-    m.CreateMaze(loadMaze="aStardemo.csv")
+    m = Maze.load("aStardemo.csv", (4, 4))
 
     searchPath, aPath, fwdPath = aStar(m)
     a = Agent(m, footprints=True, color=COLOR.blue, filled=True)
