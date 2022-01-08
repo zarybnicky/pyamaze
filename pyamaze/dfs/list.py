@@ -7,6 +7,7 @@ def DFS(m, start=None):
     explored = [start]
     frontier = [start]
     dfs_path = {}
+
     while frontier:
         current_cell = frontier.pop()
         if current_cell == m._goal:

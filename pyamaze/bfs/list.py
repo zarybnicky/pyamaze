@@ -4,40 +4,27 @@ from pyamaze import Maze, Agent, COLOR, TextLabel
 def BFS(maze, start=None):
     if start is None:
         start = (maze.rows, maze.cols)
-    frontier = [start]
-    explored = [start]
-    bfs_path = {}
     agent_path = []
 
-    while frontier:
-        current_cell = frontier.pop(0)
-        agent_path.append(current_cell)
-        if current_cell == maze._goal:
-            break
-        for d in "ESNW":
-            if not m.maze_map[current_cell][d]:
-                continue
-            if d == "E":
-                next_cell = (current_cell[0], current_cell[1] + 1)
-            elif d == "W":
-                next_cell = (current_cell[0], current_cell[1] - 1)
-            elif d == "N":
-                next_cell = (current_cell[0] - 1, current_cell[1])
-            elif d == "S":
-                next_cell = (current_cell[0] + 1, current_cell[1])
+    # OPEN SET (w/start)
+    # CLOSED SET (w/start)
+    # MAP DICT
+    # AGENT_PATH ARRAY
 
-            if next_cell in explored:
-                continue
-            frontier.append(next_cell)
-            explored.append(next_cell)
-            bfs_path[next_cell] = current_cell
+    # WHILE OPEN
+    # POP & RECORD VISITED
+    # CHECK GOAL
+    # CHECK maze.maze_map[current_cell][d] for d in "ESNW"
+    # CHECK CLOSED
+    # MARK AS OPEN
+    # MAP (next <- current)
+
+    # REVERSE PATH, follow (next <- current) and mark reverse path
 
     fwd_path = {}
     cell = maze._goal
-    while cell != start:
-        fwd_path[bfs_path[cell]] = cell
-        cell = bfs_path[cell]
-    return fwd_path
+
+    return agent_path, fwd_path
 
 
 if __name__ == "__main__":
@@ -46,6 +33,7 @@ if __name__ == "__main__":
     search_path, path = BFS(m)
 
     a = Agent(m, footprints=True, filled=True)
+    b = Agent(m, footprints=True, color=COLOR.red, shape="square", filled=False)
     m.tracePath({a: path})
     m.tracePath({b: search_path})
     l = TextLabel(m, "Length of Shortest Path", len(path) + 1)
